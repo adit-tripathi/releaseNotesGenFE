@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import jsPDF from "jspdf";
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const ReleaseNotesGenerator = () => {
   const [repoUrl, setRepoUrl] = useState("");
   const [releaseNotes, setReleaseNotes] = useState("");
+  const [summary, setSummary] = useState("");
   const [authorImages, setAuthorImages] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -12,8 +14,10 @@ const ReleaseNotesGenerator = () => {
     if (!repoUrl) return;
     setLoading(true);
     try {
-      const response = await axios.post("http://localhost:5000/api/generate-release-notes", { repoUrl });
-      setReleaseNotes(response.data.notes);
+      const response = await axios.post("http://localhost:5000/api/generate-release-notes-v2", { repoUrl });
+      const { notes, summary } = response.data;
+      setReleaseNotes(notes);
+      setSummary(summary);
       fetchAuthorImages();
     } catch (error) {
       console.error("Error fetching release notes", error);
@@ -30,7 +34,7 @@ const ReleaseNotesGenerator = () => {
 
       const { data } = await axios.get(commitsUrl);
       const uniqueImages = Array.from(new Map(data.map(commit => [
-        commit.author?.avatar_url, // Key for uniqueness
+        commit.author?.avatar_url,
         {
           name: commit.commit.author.name,
           avatar: commit.author?.avatar_url || "https://via.placeholder.com/40",
@@ -100,9 +104,16 @@ const ReleaseNotesGenerator = () => {
             )}
           </div>
 
+          {summary && (
+            <div className="alert alert-info">
+              <h4>Summary</h4>
+              <p>{summary}</p>
+            </div>
+          )}
+
           {releaseNotes && (
             <div className="alert alert-secondary">
-              <h4>Generated Release Notes</h4>
+              <h4>Detailed Release Notes</h4>
               <pre>{releaseNotes}</pre>
             </div>
           )}
